@@ -66,8 +66,77 @@ public class DatabaseClass {
 	   return coworkId;
    }
    
-   public static void getCowork(int coworkID) {
+   public static CoWork addUserAsAttendee(AddUserClass addUserClass) {
 	   
+	   CoWork coWork = getCowork(addUserClass.getCoworkID());
+	   String attendeesID = coWork.getAttendeesID();
+	   
+	   if(attendeesID.equals("")) {
+		   attendeesID = addUserClass.getUserID();
+	   } else {
+		   attendeesID = attendeesID + "," + addUserClass.getUserID();
+	   }
+	   
+	   try {
+		   String insertTableSQL = "UPDATE " + Constants.Database.TABLE_COWORKS
+					+ " SET attendeesID = ? WHERE coworkID = ?";
+			PreparedStatement preparedStatement = 
+					(PreparedStatement) getConnection().prepareStatement(insertTableSQL, Statement.RETURN_GENERATED_KEYS);
+			preparedStatement.setString(1, attendeesID);
+			preparedStatement.setInt(2, addUserClass.getCoworkID());
+			
+			// execute insert SQL statement
+			preparedStatement.executeUpdate();
+			ResultSet rs = preparedStatement.getGeneratedKeys();
+			while (rs.next()) {
+				coWork.setAttendeesID(rs.getString(3));
+			}
+		   System.out.println("Added user as attendees successfully into cowork table");
+		   jdbcConn.close();
+	   } catch (Exception e) {
+		   System.out.println("Error adding user as attendees into cowork table");
+		   e.printStackTrace();
+	   }
+	   
+	   return coWork;
+   }
+   
+   public static CoWork getCowork(int coworkID) {
+	   CoWork coWork = new CoWork();	   
+	   try {
+		   String insertTableSQL = "SELECT * FROM " + Constants.Database.TABLE_COWORKS
+					+ " WHERE coworkID = ?";
+			PreparedStatement preparedStatement = 
+					(PreparedStatement) jdbcConn.prepareStatement(insertTableSQL, Statement.RETURN_GENERATED_KEYS);
+			preparedStatement.setInt(1, coworkID);
+			
+			// execute insert SQL statement
+			ResultSet rs = preparedStatement.executeQuery();
+			while(rs.next()) {
+				System.out.println("while loop coworkID: " + rs.getInt(Constants.MyDatabase.FIELD_COWORK_ID));
+				coWork.setCoworkID(rs.getInt(Constants.MyDatabase.FIELD_COWORK_ID));
+				coWork.setCreatorID(rs.getString(Constants.MyDatabase.FIELD_CREATOR_ID));
+				coWork.setAttendeesID(rs.getString(Constants.MyDatabase.FIELD_ATTENDEES_ID));
+				coWork.setNumAttendees(rs.getInt(Constants.MyDatabase.FIELD_NUM_ATTENDEES));
+				coWork.setLocationName(rs.getString(Constants.MyDatabase.FIELD_lOCATION_NAME));
+				coWork.setLocationLat(rs.getDouble(Constants.MyDatabase.FIELD_LOCATION_LATITUDE));
+				coWork.setLocationLng(rs.getDouble(Constants.MyDatabase.FIELD_LOCATION_LONGITUDE));
+				coWork.setTime(rs.getString(Constants.MyDatabase.FIELD_TIME));
+				coWork.setDate(rs.getString(Constants.MyDatabase.FIELD_DATE));
+				coWork.setActivityType(rs.getInt(Constants.MyDatabase.FIELD_ACTIVITY_TYPE));
+				coWork.setDescription(rs.getString(Constants.MyDatabase.FIELD_DESCRIPTION));
+				coWork.setFinished(rs.getInt(Constants.MyDatabase.FIELD_FINISHED));
+				coWork.setCanceled(rs.getInt(Constants.MyDatabase.FIELD_CANCELED));
+			}
+			
+		   System.out.println("Cowork fetched successfully: coworkID: " + coworkID);
+		   jdbcConn.close();
+	   } catch (Exception e) {
+		   System.out.println("Error fetching coworkID: " + coworkID);
+		   e.printStackTrace();
+	   }
+	   
+	   return coWork;
    }
    
    /*

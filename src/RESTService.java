@@ -154,6 +154,38 @@ public class RESTService {
 	}	
 	
 	@POST
+	@Path("/adduserasattendee")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response addUserAsAttendee(InputStream incomingData) {
+		StringBuilder jsonStr = new StringBuilder();
+		try {
+			BufferedReader in = new BufferedReader(new InputStreamReader(incomingData));
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				jsonStr.append(line);
+			}
+		} catch (Exception e) {
+			System.out.println("Error Parsing: - ");
+		}
+		System.out.println("Data Received: " + jsonStr.toString());
+ 
+		Gson gson = new Gson();
+		AddUserClass addUserClass = gson.fromJson(jsonStr.toString(), AddUserClass.class);
+		
+		if(DatabaseClass.getConnection() != null) {
+			CoWork coWork = DatabaseClass.addUserAsAttendee(addUserClass);
+			
+			String jsonCoWork = gson.toJson(coWork);
+			System.out.println("Json fetched from database: " + jsonCoWork);
+			
+			// return HTTP response 200 in case of success
+			return Response.status(200).entity(String.valueOf(jsonCoWork)).build();
+		}
+
+		return Response.status(500).build();
+	}
+	
+	@POST
 	@Path("/getcorrespondinguserprofilelist")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response getCorrespondingUserProfileList(InputStream incomingData) {
