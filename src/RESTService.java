@@ -3,7 +3,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import javax.annotation.PostConstruct;
 import javax.print.attribute.standard.Media;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -18,6 +21,16 @@ import com.google.gson.Gson;
 
 @Path("/")
 public class RESTService {
+	
+	/*public static void main(String[] args) {
+		System.out.println("Service started");
+	}*/
+	
+	@PostConstruct
+	public void init() {
+		System.out.println("Service started init()");
+	}
+	
 	@POST
 	@Path("/insertcowork")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -44,7 +57,7 @@ public class RESTService {
 			// return HTTP response 200 in case of success
 			return Response.status(200).entity(String.valueOf(coworkId)).build();
 		}
-
+		
 		return Response.status(500).build();
 	}
  

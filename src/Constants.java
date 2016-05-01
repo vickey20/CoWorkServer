@@ -80,6 +80,7 @@ public class Constants {
         public static final String FIELD_LOCATION_LONGITUDE = "locationLng";
         public static final String FIELD_TIME = "time";
         public static final String FIELD_DATE = "date";
+        public static final String FIELD_DURATION = "duration";
         public static final String FIELD_ACTIVITY_TYPE = "activityType";
         public static final String FIELD_DESCRIPTION = "description";
         public static final String FIELD_FINISHED = "finished";
@@ -128,5 +129,10 @@ public class Constants {
         public final static int REQUEST_CHECK_SETTINGS = 100;
         public final static int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 201;
         public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    }
+    
+    public class TimeAndDate {
+        public static final String TIME_FORMAT = "hh:mm a";
+        public static final String DATE_FORMAT = "yyyy-MM-dd";
     }
 }

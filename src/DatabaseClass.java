@@ -4,6 +4,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
+import org.quartz.JobBuilder.*;
+
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
 import com.mysql.jdbc.StringUtils;
@@ -33,8 +35,8 @@ public class DatabaseClass {
 	   try {
 		   String insertTableSQL = "INSERT INTO " + Constants.Database.TABLE_COWORKS
 					+ "(creatorID, attendeesID, numAttendees, locationName, "
-					+ "locationLat, locationLng, time, date, activityType, description, finished, canceled) VALUES"
-					+ "(?,?,?,?,?,?,?,?,?,?,?,?)";
+					+ "locationLat, locationLng, time, date, duration, activityType, description, finished, canceled) VALUES"
+					+ "(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 			PreparedStatement preparedStatement = 
 					(PreparedStatement) jdbcConn.prepareStatement(insertTableSQL, Statement.RETURN_GENERATED_KEYS);
 			preparedStatement.setString(1, cowork.getCreatorID());
@@ -45,25 +47,48 @@ public class DatabaseClass {
 			preparedStatement.setDouble(6, cowork.getLocationLng());
 			preparedStatement.setString(7, cowork.getTime());
 			preparedStatement.setString(8, cowork.getDate());
-			preparedStatement.setInt(9, cowork.getActivityType());
-			preparedStatement.setString(10, cowork.getDescription());
-			preparedStatement.setInt(11, cowork.getFinished());
-			preparedStatement.setInt(12, cowork.getCanceled());
+			preparedStatement.setDouble(9, cowork.getDuration());
+			preparedStatement.setInt(10, cowork.getActivityType());
+			preparedStatement.setString(11, cowork.getDescription());
+			preparedStatement.setInt(12, cowork.getFinished());
+			preparedStatement.setInt(13, cowork.getCanceled());
 			
 			// execute insert SQL statement
-			preparedStatement .executeUpdate();
+			preparedStatement.executeUpdate();
 		   
 			ResultSet rs = preparedStatement.getGeneratedKeys();
 			rs.next();
 			coworkId = rs.getInt(1);
 		   System.out.println("Inserted data successfully into cowork table");
 		   jdbcConn.close();
+		   SchedulerJobs.scheduleCoworkToExpire(coworkId, cowork.getTime(), cowork.getDate(), cowork.getDuration());
 	   } catch (Exception e) {
 		   System.out.println("Error inserting data into cowork table");
 		   e.printStackTrace();
 	   }
 	   
 	   return coworkId;
+   }
+   
+   public static void updateCoworkToExpire(int coworkID) {
+	   try {
+		   String updateCoworkSQL = "UPDATE " + Constants.Database.TABLE_COWORKS
+					+ " SET finished = ?"
+					+ " WHERE coworkID = ?";
+			PreparedStatement preparedStatement = 
+					(PreparedStatement) jdbcConn.prepareStatement(updateCoworkSQL, Statement.RETURN_GENERATED_KEYS);
+			preparedStatement.setInt(1, 1);
+			preparedStatement.setInt(2, coworkID);
+			
+			// execute insert SQL statement
+			preparedStatement .executeUpdate();
+		   
+		   System.out.println("Updated cowork: " + coworkID + " to expire");
+		   jdbcConn.close();
+	   } catch (Exception e) {
+		   System.out.println("Error inserting data into cowork table");
+		   e.printStackTrace();
+	   }
    }
    
    public static CoWork addUserAsAttendee(AddUserClass addUserClass) {
@@ -123,6 +148,7 @@ public class DatabaseClass {
 				coWork.setLocationLng(rs.getDouble(Constants.MyDatabase.FIELD_LOCATION_LONGITUDE));
 				coWork.setTime(rs.getString(Constants.MyDatabase.FIELD_TIME));
 				coWork.setDate(rs.getString(Constants.MyDatabase.FIELD_DATE));
+				coWork.setDuration((long) rs.getDouble(Constants.MyDatabase.FIELD_DURATION));
 				coWork.setActivityType(rs.getInt(Constants.MyDatabase.FIELD_ACTIVITY_TYPE));
 				coWork.setDescription(rs.getString(Constants.MyDatabase.FIELD_DESCRIPTION));
 				coWork.setFinished(rs.getInt(Constants.MyDatabase.FIELD_FINISHED));
@@ -193,7 +219,7 @@ public class DatabaseClass {
 	   
 	   try {
 		   String getNearbyCoworkQuery = "SELECT * FROM " + Constants.Database.TABLE_COWORKS
-					+ " WHERE locationLat BETWEEN ? AND ? AND locationLng BETWEEN ? AND ?";
+					+ " WHERE finished = 0 AND locationLat BETWEEN ? AND ? AND locationLng BETWEEN ? AND ?";
 		   
 			PreparedStatement preparedStatement = (PreparedStatement) jdbcConn.prepareStatement(getNearbyCoworkQuery);
 			preparedStatement.setString(1, String.valueOf(lat1));
@@ -219,6 +245,7 @@ public class DatabaseClass {
 				cowork.setLocationLng(rs.getDouble(Constants.MyDatabase.FIELD_LOCATION_LONGITUDE));
 				cowork.setTime(rs.getString(Constants.MyDatabase.FIELD_TIME));
 				cowork.setDate(rs.getString(Constants.MyDatabase.FIELD_DATE));
+				cowork.setDuration((long) rs.getDouble(Constants.MyDatabase.FIELD_DURATION));
 				cowork.setActivityType(rs.getInt(Constants.MyDatabase.FIELD_ACTIVITY_TYPE));
 				cowork.setDescription(rs.getString(Constants.MyDatabase.FIELD_DESCRIPTION));
 				cowork.setFinished(rs.getInt(Constants.MyDatabase.FIELD_FINISHED));
@@ -297,25 +324,35 @@ public class DatabaseClass {
 	   ArrayList<UserProfile> userProfiles = new ArrayList<>();
 	   
 	   ArrayList<String> userIds = new ArrayList<>();
-	   String parameters = "";
+	   //String parameters = ""; 
+	   String queryParams = "";
 	   for (UserProfileList userProfile : userProfileArray) {
-		   userIds.add(userProfile.getUserID());
-		   if(userProfile.getUserID().equals("") == false) {
+		   if(userIds.contains(userProfile.getUserID()) == false) {
+			   userIds.add(userProfile.getUserID());
+			   queryParams = queryParams + "?" + ",";
+		   }
+		   /*if(userProfile.getUserID().equals("") == false) {
 			   parameters = parameters + "\'" + userProfile.getUserID() + "\'" + ",";
-		   }	   
+		   }*/	   
 	   }
 	   
-	   parameters = parameters.substring(0, parameters.length() - 1);
-	   System.out.println("parameters: " + parameters);
+	   /*parameters = parameters.substring(0, parameters.length() - 1);
+	   System.out.println("parameters: " + parameters);*/
+	   
+	   queryParams = queryParams.substring(0, queryParams.length() -1 );
+	   System.out.println("userIds: " + userIds);
+	   System.out.println("queryParams: " + queryParams);
 	   
 	   try {
 		   String getNearbyCoworkQuery = "SELECT * FROM " + Constants.Database.TABLE_USERS
-					+ " WHERE userID IN ('vikramgupta20.7@gmail.com','vikram@kamama.com')";
+					+ " WHERE userID IN (" + queryParams + ")";
 		   
 			PreparedStatement preparedStatement = (PreparedStatement) jdbcConn.prepareStatement(getNearbyCoworkQuery);
 			
 			//Array array = jdbcConn.createArrayOf("VARCHAR", userIds);
-			//preparedStatement.setString(1, parameters);
+			for (int i = 0; i < userIds.size(); i++) {
+				preparedStatement.setString(i + 1, userIds.get(i));
+			}
 			
 			// execute SQL statement
 			ResultSet rs = preparedStatement.executeQuery();
