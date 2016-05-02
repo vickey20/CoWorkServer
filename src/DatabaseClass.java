@@ -219,13 +219,14 @@ public class DatabaseClass {
 	   
 	   try {
 		   String getNearbyCoworkQuery = "SELECT * FROM " + Constants.Database.TABLE_COWORKS
-					+ " WHERE finished = 0 AND locationLat BETWEEN ? AND ? AND locationLng BETWEEN ? AND ?";
+					+ " WHERE finished = ? AND locationLat BETWEEN ? AND ? AND locationLng BETWEEN ? AND ?";
 		   
 			PreparedStatement preparedStatement = (PreparedStatement) jdbcConn.prepareStatement(getNearbyCoworkQuery);
-			preparedStatement.setString(1, String.valueOf(lat1));
-			preparedStatement.setString(2, String.valueOf(lat2));
-			preparedStatement.setString(3, String.valueOf(lng1));
-			preparedStatement.setString(4, String.valueOf(lng2));
+			preparedStatement.setString(1, "0");
+			preparedStatement.setString(2, String.valueOf(lat1));
+			preparedStatement.setString(3, String.valueOf(lat2));
+			preparedStatement.setString(4, String.valueOf(lng1));
+			preparedStatement.setString(5, String.valueOf(lng2));
 			
 			// execute SQL statement
 			ResultSet rs = preparedStatement.executeQuery();

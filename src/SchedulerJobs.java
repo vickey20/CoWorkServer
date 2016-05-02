@@ -35,7 +35,9 @@ public class SchedulerJobs implements Job{
 		switch (requestType) {
 			case UPDATE_COWORK_TO_EXPIRE:
 				int coworkID = jobDataMap.getInt(COWORK_ID);
-				DatabaseClass.updateCoworkToExpire(coworkID);
+				if (DatabaseClass.getConnection() != null) {
+					DatabaseClass.updateCoworkToExpire(coworkID);
+				}
 				break;
 
 			default:
@@ -62,7 +64,7 @@ public class SchedulerJobs implements Job{
 		jobDataMap.put(COWORK_ID, coworkID);
 		
 		JobDetail jobDetail = JobBuilder.newJob(SchedulerJobs.class)
-				.withIdentity(COWORK_ID)
+				.withIdentity(String.valueOf(coworkID))
 				.setJobData(jobDataMap)
 				.build();
 		
